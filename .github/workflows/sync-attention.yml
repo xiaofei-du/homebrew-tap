@@ -1,0 +1,62 @@
+name: Sync Attention
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Check and show the update without creating a PR or running Mac tests
+        type: boolean
+        default: false
+  # After an earlier update is merged, catch up if upstream advanced while it
+  # awaited review. No scheduled polling.
+  push:
+    branches: [main]
+    paths: [Formula/attention.rb]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-attention
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.repository == 'xiaofei-du/homebrew-tap' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Prepare a bump from tested upstream main
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/sync_attention.py
+      - name: Show proposed changes
+        run: git diff -- Formula/attention.rb README.md
+      - name: Open the version update PR
+        id: pr
+        if: steps.plan.outputs.changed == 'true' && inputs.dry_run != true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          UPDATE_VERSION: ${{ steps.plan.outputs.version }}
+          SOURCE_SHA: ${{ steps.plan.outputs.source_sha }}
+          ARCHIVE_SHA256: ${{ steps.plan.outputs.sha256 }}
+          UPSTREAM_RUN_URL: ${{ steps.plan.outputs.run_url }}
+        run: bash scripts/open_update_pr.sh
+      # GITHUB_TOKEN-created PRs do not start unattended PR CI. Explicitly
+      # dispatch the read-only test workflow, tied to this exact branch head.
+      - name: Request Mac tests once per PR commit
+        if: inputs.dry_run != true && (steps.pr.outputs.head_sha != '' || steps.plan.outputs.head_sha != '')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          UPDATE_BRANCH: ${{ steps.plan.outputs.branch }}
+          UPDATE_SHA: ${{ steps.pr.outputs.head_sha || steps.plan.outputs.head_sha }}
+        run: python3 scripts/sync_attention.py --dispatch-tests "$UPDATE_BRANCH" "$UPDATE_SHA"
