@@ -1,0 +1,52 @@
+name: Homebrew
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  formula:
+    name: Formula (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, macos-15-intel]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: '1'
+      HOMEBREW_NO_INSTALL_CLEANUP: '1'
+      HOMEBREW_NO_AUTOREMOVE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Register the checked-out tap
+        run: brew tap xiaofei-du/tap "$GITHUB_WORKSPACE"
+      - name: Install an older formula version and upgrade
+        run: |
+          formula="$(brew --repo xiaofei-du/tap)/Formula/attention.rb"
+          cp "$formula" "$RUNNER_TEMP/attention-current.rb"
+          sed -i '' 's/version "0.1.6"/version "0.1.5"/' "$formula"
+          brew install --build-from-source xiaofei-du/tap/attention
+          attention --version | grep '0.1.5'
+          cp "$RUNNER_TEMP/attention-current.rb" "$formula"
+          brew upgrade xiaofei-du/tap/attention
+          attention --version | grep '0.1.6'
+      - name: Test and audit
+        run: |
+          brew test xiaofei-du/tap/attention
+          brew audit --strict xiaofei-du/tap/attention
+      - name: Reinstall and verify commands
+        run: |
+          brew reinstall xiaofei-du/tap/attention
+          attention --version
+          attention setup --help
+          attention update --help
+      - name: Remove only the installed formula
+        run: |
+          brew uninstall xiaofei-du/tap/attention
+          test ! -e "$(brew --prefix)/bin/attention"
+          brew list --versions uv
