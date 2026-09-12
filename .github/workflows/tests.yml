@@ -1,12 +1,27 @@
 name: Homebrew
+run-name: Homebrew (${{ inputs.expected_sha || github.event.pull_request.head.sha || github.sha }})
 on:
   pull_request:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: Optional exact update commit to test
+        type: string
+        default: ''
 permissions:
   contents: read
 jobs:
+  automation:
+    name: Update automation tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: python3 -m unittest discover -s tests -v
   formula:
     name: Formula (${{ matrix.os }})
     strategy:
@@ -23,6 +38,13 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Verify the requested commit
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: |
+          if [ -n "$EXPECTED_SHA" ]; then
+            test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          fi
       - name: Register the checked-out tap
         run: brew tap xiaofei-du/tap "$GITHUB_WORKSPACE"
       - name: Install an older formula version and upgrade
