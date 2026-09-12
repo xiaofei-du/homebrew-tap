@@ -1,9 +1,9 @@
 class Attention < Formula
   desc "Manage spoken coding-agent notifications for Codex and Claude Code"
   homepage "https://github.com/xiaofei-du/attention"
-  url "https://github.com/xiaofei-du/attention/archive/cd49df9a1f645ab73c8512e7d76255af48b798be.tar.gz"
-  version "0.1.6"
-  sha256 "f0539235ddb6ba2bec50e8654e5e285215a119d81a71f73daf0471e8e8105f2c"
+  url "https://github.com/xiaofei-du/attention/archive/f8711397c227c683418f342bdffb29c2f0d60959.tar.gz"
+  version "0.1.7"
+  sha256 "54661bf30653319c3e00db4d374041adf21fc24ff58b36479dbd06d29dd309f4"
   license "MIT"
 
   depends_on macos: :sonoma
