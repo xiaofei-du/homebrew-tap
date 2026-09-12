@@ -47,6 +47,7 @@ jobs:
           attention update --help
       - name: Remove only the installed formula
         run: |
-          brew uninstall xiaofei-du/tap/attention
+          brew uninstall --formula --force xiaofei-du/tap/attention
           test ! -e "$(brew --prefix)/bin/attention"
+          test ! -d "$(brew --cellar)/attention"
           brew list --versions uv

@@ -20,9 +20,10 @@ attention uninstall
 ```
 
 The command previews the scope and asks for confirmation. Shared uv/Python and
-this tap are retained. Cancelling or failed cleanup keeps the command available.
+this tap are retained. All Homebrew versions of Attention are removed. Cancelling
+or failed cleanup keeps the command available.
 `brew uninstall attention` alone removes only the command, leaving plugins and
-settings intact. See the [Attention guide](https://github.com/xiaofei-du/attention/blob/main/docs/homebrew.md)
+settings intact. See the [Attention guide](https://github.com/xiaofei-du/attention/blob/cd49df9a1f645ab73c8512e7d76255af48b798be/docs/homebrew.md)
 for custom profiles, offline cleanup and manual installation.
 
 Homebrew distributes the management command and depends on uv. Native plugin
