@@ -28,13 +28,15 @@ jobs:
       - name: Install an older formula version and upgrade
         run: |
           formula="$(brew --repo xiaofei-du/tap)/Formula/attention.rb"
+          current_version="$(sed -nE 's/^  version "([^"]+)"$/\1/p' "$formula")"
+          test -n "$current_version"
           cp "$formula" "$RUNNER_TEMP/attention-current.rb"
-          sed -i '' 's/version "0.1.6"/version "0.1.5"/' "$formula"
+          sed -i '' -E 's/^  version "[^"]+"$/  version "0.0.0"/' "$formula"
           brew install --build-from-source xiaofei-du/tap/attention
-          attention --version | grep '0.1.5'
+          attention --version | grep -Fx 'Attention installer 0.0.0'
           cp "$RUNNER_TEMP/attention-current.rb" "$formula"
           brew upgrade xiaofei-du/tap/attention
-          attention --version | grep '0.1.6'
+          attention --version | grep -Fx "Attention installer $current_version"
       - name: Test and audit
         run: |
           brew test xiaofei-du/tap/attention
